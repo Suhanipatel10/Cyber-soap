@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Web Service</title>
+    <script>
+        function fetchItemDetails() {
+            const itemName = document.getElementById('items').value;
+            if (!itemName) return;
+            
+            fetch(`/item?name=${encodeURIComponent(itemName)}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('item-image').src = data.image;
+                    document.getElementById('item-image').style.display = 'block';
+                    document.getElementById('item-description').innerText = data.description;
+                });
+        }
+    </script>
+</head>
+<body>
+    <label for="items">Choose an item:</label>
+    <select id="items" onchange="fetchItemDetails()">
+        <option value="">--Select an item--</option>
+        <option value="apple">Apple</option>
+        <option value="banana">Banana</option>
+        <option value="orange">Orange</option>
+    </select>
+    
+    <div id="item-details">
+        <img id="item-image" src="" alt="" style="width:150px; display:none;">
+        <p id="item-description"></p>
+    </div>
+</body>
+</html>
