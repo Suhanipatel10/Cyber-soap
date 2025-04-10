@@ -4,7 +4,9 @@ const express = require('express');
 const path = require('path');
 const helmet = require('helmet');
 const cors = require('cors');
+require('dotenv').config();
 const passport = require('passport');
+const session = require('express-session');
 const OAuth2Strategy = require('passport-oauth2');
 const { query, validationResult } = require('express-validator');
 
@@ -34,18 +36,52 @@ app.use(cors());
 // Serve static files
 app.use(express.static('public'));
 
-// OAuth 2.0 Authentication
-passport.use(new OAuth2Strategy({
-    authorizationURL: 'https://auth.example.com/auth',
-    tokenURL: 'https://auth.example.com/token',
-    clientID: 'CLIENT_ID',
-    clientSecret: 'CLIENT_SECRET',
-    callbackURL: '/auth/callback'
-}, (accessToken, refreshToken, profile, done) => {
-    return done(null, profile);
+// Add session support
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'supersecret123',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // set to false since you're using HTTPS locally
 }));
 
+// Initialize Passport session
 app.use(passport.initialize());
+app.use(passport.session());
+
+// Serialize & deserialize user (required for session handling)
+passport.serializeUser((user, done) => {
+    done(null, user);
+});
+
+passport.deserializeUser((obj, done) => {
+    done(null, obj);
+});
+
+
+// OAuth 2.0 Authentication
+passport.use(new OAuth2Strategy({
+    authorizationURL: 'https://dev-tlliy8e73gxuyxwg.us.auth0.com/authorize',
+    tokenURL: 'https://dev-tlliy8e73gxuyxwg.us.auth0.com/oauth/token',
+    clientID: process.env.CLIENT_ID,
+    clientSecret: process.env.CLIENT_SECRET,
+    callbackURL: 'https://localhost:3000/auth/callback'
+}, (accessToken, refreshToken, profile, done) => {
+    // You can retrieve user info from Auth0 if needed
+    return done(null, { accessToken });
+}));
+
+
+
+
+// ✅ Add OAuth login and callback routes here:
+app.get('/auth/login', passport.authenticate('oauth2'));
+
+app.get('/auth/callback',
+    passport.authenticate('oauth2', { failureRedirect: '/' }),
+    (req, res) => {
+        res.send('✅ Login successful with OAuth!');
+    }
+);
 
 // Mock user database
 const users = {
